@@ -1,4 +1,4 @@
-# This class implements a multi layerede neural network
+# This class implements a multilayered neural network
 
 from numpy import random, zeros, sum
 
@@ -8,6 +8,13 @@ class NeuralNetwork:
         this.W = [] # list containing all the L weightmatrices
         this.b = [] # list containing all the L biasvectors
         
+        # for updating iteratively
+        this.W_next = [] # list containing all the L weightmatrices
+        this.b_next = [] # list containing all the L biasvectors
+        
+        this.grad_W = [] # list containing gradients for the weightmatrices
+        this.grad_b = [] # list containing gradients for the biasvectors
+
         this.act = [] # list containing all the L activationfunctions
         # list containing all the L activationfunctin derivatives
         this.act_diff = [] 
@@ -85,6 +92,10 @@ class NeuralNetwork:
         for i in range(len(b) - 1):
             this.delta.append(zeros((len(this.b[i+1]), 1))]
 
+        # set up list of gradientmatrices C(W)
+        
+        # set up list of gradientvectors C(b)
+
         this.compiled = True
 
 
@@ -136,16 +147,16 @@ class NeuralNetwork:
 
     # The much talked about backpropagation
     # 
-    # @X: predictor/input matrix, columns are datapoints
-    # @T: targets, columns are datapoints
+    # @x: predictor/input
+    # @t: targets
     #
-    def fit(this, X, T):
+    def back_propagate(this, x, t):
         print("This function is not fully implemented yet.")
         
         if !this.compiled:
             print("Network is not compiled. Use compile().")
             return
-
+        """
         # for increased readability
         z = this.z
         delta = this.delta
@@ -156,25 +167,52 @@ class NeuralNetwork:
 
         # compute the deltas
         for k in range(N):
-            # forward
-            y = forward(X[:,k:k+1])
+            """
+        # forward
+        y = forward(x)
 
-            # Compute delta_L
-            delta[L] += this.cost_func_diff(this.act_func[L](z[L]))*this.act_func_diff[L](z[L])
+        # Compute delta_L
+        delta[L] += this.cost_func_diff(this.act_func[L](z[L]))*this.act_func_diff[L](z[L])
 
-            # Compute delta_l for l=L-1, L-2, ..., 1
-            for l in reversed(range(len(this.W) - 1)):
-                delta[l] += sum(delta[l+1]*this.W[:,l+1:l+2]*this.act_func_diff[l](z[l]), axis=1)
-        
+        # Compute delta_l for l=L-1, L-2, ..., 1
+        for l in reversed(range(len(this.W) - 1)):
+            delta[l] += sum(delta[l+1]*this.W[:,l+1:l+2]*this.act_func_diff[l](z[l]), axis=1)
+
+        gradient =  
+            
         # Update the weights and biases
         """
         for i in delta:
             i /= N
         """
+        return gradient
 
 
+    # Fit yor network using stochastic gradient method
+    #
+    # @X: trainingdatamatrix, columns are datapoints
+    # @T: targets for training data X, columns are datapoints
+    #
+    def fit(this, X, T, iters=5, batch_size=10):
+        for i in range(iters):
+            # pick random numbers from 0 to X.shape[1] - 1
+            batch = some_function(X, batch_size)
+            for j in batch:
+                # compute the gradient of the costfunction for sample j 
+                gradient = back_propagate(X[:,j], T[:,j])
+
+                # add this gradient/N to the total gradient
+                total_grad += gradient/batch_size
+
+            # update weights and biases
+            for l in range(L):
+                W = W_old - this.eta
 
 
     # Step 2 of the much talked about backpropagation
     def update_parameters(this):
         print("This function is not implemented yet.")
+        
+        if !this.compiled:
+            print("Network is not compiled. Use compile().")
+            return
