@@ -26,10 +26,8 @@ class NeuralNetwork:
         
         # flag determining wether the network can start to learn
         this.compiled = False 
-        """
-        this.delta = None # the deltas in the backpropagation
-        """
-
+        this.fitted = False 
+        
     #
     # Functions for setting up the neural network
     #
@@ -113,27 +111,8 @@ class NeuralNetwork:
 
 
     #
-    # Functions for training and prediction 
+    # Functions for training 
     #
-
-
-    # Predicts the response/output given a predictor/input
-    #
-    # @x: the input/predictor for the neural network to predict on as
-    #     a column vector
-    #
-    def predict(this, x):
-        if not this.compiled:
-            print("Network is not compiled. Use compile().")
-            return
-        
-        y = x
-        
-        # compute the output
-        for i in range(len(this.W)):
-            y = this.act_func[i](this.W[i].dot(y) + this.b[i])
-
-        return z, y
 
 
     # Predicts the response/output given a predictor/input
@@ -179,13 +158,6 @@ class NeuralNetwork:
             print("Network is not compiled. Use compile().")
             return
         
-        """
-        print("x.shape:")
-        print(x.shape)
-        print("t.shape:")
-        print(t.shape)
-        """
-        
         # setting up neede variables, lists and so on
         L = len(this.W)
         delta = [None]*L
@@ -194,42 +166,23 @@ class NeuralNetwork:
         gradient_W = []
         gradient_b = []
         for l in range(L):
-            """
-            print("this.W[l].shape:")
-            print(this.W[l].shape)
-            print("this.b[l].shape:")
-            print(this.b[l].shape)
-            """
             gradient_W.append(zeros((this.W[l].shape)))
             gradient_b.append(zeros((this.b[l].shape)))
          
         # Compute delta_L
-        
         delta[L-1] = this.cost_func_diff(this.act[L-1](z[L-1]), t)*this.act_diff[L-1](z[L-1])
         
         # Compute delta_l for l=L-1, L-2, ..., 1
         for l in range(L-2, -1, -1):
             da_dz = this.act_diff[l](z[l])
             delta[l] = this.W[l+1].T.dot(delta[l+1])*this.act_diff[l](z[l])
-        """
-        # special treatment of last iteration
-        print("shape: " )
-        print(delta[1].shape)
-        print(this.W[0].shape)
-        print(x.shape)
-        print((delta[1]*this.W[0].dot(x)).shape)
-        #delta[0] = sum(delta[1]*this.W[0].dot(x), axis=1)
-        """
 
         # compute the gradient w.r.t. the weights
         for l in range(L-2, 0, -1):
-            gradient_W[l] = delta[l]*this.act[l-1](z[l-1], t).T # CHECK
-            #gradient_b[l] = delta[l]
+            gradient_W[l] = delta[l]*this.act[l-1](z[l-1], t).T
         
         # special treatment of last iteration
-        gradient_W[0] = delta[0]*x # CHECK
-        #gradient_b[0] = delta[0]
-
+        gradient_W[0] = delta[0]*x
 
         return gradient_W, delta
 
@@ -291,12 +244,60 @@ class NeuralNetwork:
                 this.W[l] = W_next[l]
                 b_next[l] = this.b[l] - this.eta*gradient_b[l]
                 this.b[l] = b_next[l]
+        
+        this.fitted = True
 
 
+#
+# Functions for predicting with the network
+#
 
+
+    # Predicts the response/output given a predictor/input
+    #
+    # @x: the input/predictor for the neural network to predict on as
+    #     a row vector
+    #
+    def predict_probability(this, x):
+        if not this.fitted:
+            print("Network is not fitted. Use compile().")
+            return
+        
+        y = x.T
+        
+        # compute the output
+        for l in range(len(this.W)):
+            y = this.act[l](this.W[l].dot(y) + this.b[l])
+
+        return y
+
+
+    # Predicts the class given a predictor/input
+    #
+    # @x: the input/predictor for the neural network to predict on as
+    #     a row vector
+    #
+    def predict_class(this, x):
+        if not this.fitted:
+            print("Network is not fitted. Use compile().")
+            return
+        
+        y = x.T
+        
+        # compute the output
+        for l in range(len(this.W)):
+            y = this.act[l](this.W[l].dot(y) + this.b[l])
+
+        if y > .5:
+            return 1
+        else:
+            return 0
+
+
+"""
 # test program
 
-from numpy import random
+from numpy import random, ones
 from functions import *
 
 N = 100
@@ -312,11 +313,19 @@ X = random.rand(N,p)
 y = random.choice([0,1], N)
 y = y.reshape((N,1))
 
+# set up and compile the net
 model.add_layer(5, sigmoid, sigmoid_diff)
 model.add_layer(1, sigmoid, sigmoid_diff)
 model.set_cost_function(cost, cost_diff)
 model.set_inputnodes(p)
 model.compile()
 
+# train the net
 model.fit(X, y, iters=5, batch_size=10)
+
+# predict with the net
+x = ones((1, 3))
+print(model.predict(x))
+"""
+
 

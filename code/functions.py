@@ -66,3 +66,15 @@ def compute_design_matrix(X):
     return Xd
 
 
+#
+# Functions for evaluation of models
+#
+
+
+def equals(x, y):
+    if (x == y):
+        return 1
+    else: 
+        return 0
+
+
