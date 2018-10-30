@@ -2,7 +2,7 @@
 # derivatives.
 
 import numpy as np
-from numpy import exp, sum, mean, zeros
+from numpy import exp, sum, mean, zeros, heaviside, log
 
 
 #
@@ -10,14 +10,23 @@ from numpy import exp, sum, mean, zeros
 #
 
 
-# the sigmoid activation function
+# Sigmoid activation function
 def sigmoid(x):
     return exp(x)/(1 + exp(x))
 
 
-# the derivative of the sigmoid activation function
+# Derivative of the sigmoid activation function
 def sigmoid_diff(x):
     return sigmoid(x)*(1 - sigmoid(x))
+
+
+# RELU activation function
+def relu(x):
+    return heaviside(x, 0)*x
+
+# RELU derivative, activation function
+def relu_diff(x):
+    return heaviside(x, 0)
 
 
 #
@@ -30,18 +39,38 @@ def sigmoid_diff(x):
 # @y: a row-vector containing the prediction for the given predictor
 # @t: a row-vector containing the target for the given predictor
 #
-def cost(y, t):
+def cost_lin(y, t):
     return .5*sum((y - t)**2, axis=1)
 
 
-# The derivative of the cost function for a single sample
-def cost_diff(y, t):
-    return y - t
+# The derivative of the cost function for a single sample w.r.t. the output
+# from the last layer
+def cost_lin_diff(y, t):
+    return y - t 
 
 
 # Computes the cost over all samples and all responses
-def total_cost(Y, T):
+def total_cost_lin(Y, T):
     return sum(mean(Y, T), axis=0)
+
+
+# Cross entropy in a single sample, cost function
+#
+# @y: prediction of neural network
+# @t: the target 
+#
+def cost_crossentr(y, t):
+    return  - t*log(y) - (1-t)*log(1-y)
+
+
+# Cross entropy derivative (w.r.t. output of network), cost function
+#
+#
+# @y: prediction of neural network
+# @t: the target 
+#
+def cost_crossentr_diff(y, t):
+    return (y-t)/(y*(1-y))
 
 
 #
@@ -72,9 +101,6 @@ def compute_design_matrix(X):
 
 
 def equals(x, y):
-    if (x == y):
-        return 1
-    else: 
-        return 0
+    return (x == y)*1
 
 
