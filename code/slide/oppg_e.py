@@ -4,8 +4,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import numpy as np
 
-# generate ising data: One dimension, L=40, N=10000
-states, energies = generate_data(40)
+# generate ising data: One dimension, L=40, N=100000
+states, energies = generate_data(40, 100000)
 
 print(states.shape)
 print(energies.shape)
