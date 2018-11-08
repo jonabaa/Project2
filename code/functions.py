@@ -12,7 +12,7 @@ from numpy import exp, sum, mean, zeros, heaviside, log
 
 # Sigmoid activation function
 def sigmoid(x):
-    return exp(x)/(1 + exp(x))
+    return 1/(1 + exp(-x))
 
 
 # Derivative of the sigmoid activation function
@@ -24,9 +24,20 @@ def sigmoid_diff(x):
 def relu(x):
     return heaviside(x, 0)*x
 
+
 # RELU derivative, activation function
 def relu_diff(x):
     return heaviside(x, 0)
+
+
+# Linear activation function
+def linear(x):
+    return x
+
+
+# Linear activation function differentiated
+def linear_diff(x):
+    return 1
 
 
 #
@@ -46,7 +57,7 @@ def cost_lin(y, t):
 # The derivative of the cost function for a single sample w.r.t. the output
 # from the last layer
 def cost_lin_diff(y, t):
-    return y - t 
+    return y - t
 
 
 # Computes the cost over all samples and all responses
@@ -60,7 +71,7 @@ def total_cost_lin(Y, T):
 # @t: the target 
 #
 def cost_crossentr(y, t):
-    return  - t*log(y) - (1-t)*log(1-y)
+    return -t*log(y) - (1-t)*log(1-y)
 
 
 # Cross entropy derivative (w.r.t. output of network), cost function
@@ -70,7 +81,7 @@ def cost_crossentr(y, t):
 # @t: the target 
 #
 def cost_crossentr_diff(y, t):
-    return (y-t)/(y*(1-y))
+    return -(t-y)/(y*(1-y))
 
 
 #
@@ -100,6 +111,7 @@ def compute_design_matrix(X):
 #
 
 
+# Returns 1 if the value of x equals the value of y, zero otherwise
 def equals(x, y):
     return (x == y)*1
 

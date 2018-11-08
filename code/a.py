@@ -1,4 +1,4 @@
-#
+# 
 # This file sets up a neural net and test it on learning on half moon data
 # it gives a pretty good accuracy of 97% !
 #
@@ -70,13 +70,13 @@ model.compile()
 
 # set training rate
 model.set_learning_rate(.0001)
-
+model.set_descent_rate(.8)
 
 # reshape y_train
 y_train =np.reshape(y_train, (len(y_train), 1))
 
 # train the net
-model.fit_1(X_train, y_train, 80, epochs=100)
+model.fit_stoc_batch(X_train, y_train, 80, epochs=50)
 
 # check accuracy of net
 acc = mean(equals(model.predict_class(X_test), y_test))

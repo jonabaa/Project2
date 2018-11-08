@@ -2,7 +2,7 @@
 #
 # Usage:
 # 
-# 1. Specify yor network
+# 1. Specify your network
 #    a) Set number of inout nodes
 #    b) Add layers
 #    c) Set costfunction
@@ -14,8 +14,10 @@
 #
 #
 
-from numpy import random, zeros, sum, floor, around
+from numpy import random, zeros, sum, floor, around, mean
 from numpy.random import choice
+from functions import equals
+from sklearn.metrics import accuracy_score
 
 class NeuralNetwork:
 
@@ -26,22 +28,16 @@ class NeuralNetwork:
         this.W = [] # list containing all the L weightmatrices
         this.b = [] # list containing all the L biasvectors
         
-        this.grad_W = [] # list containing gradients for the weightmatrices
-        this.grad_b = [] # list containing gradients for the biasvectors
-
         this.act = [] # list containing all the L activationfunctions
         # list containing all the L activationfunctin derivatives
-        this.act_diff = [] 
+        this.act_diff = []
         
         this.cost_func = None # The cost function for training the network
         this.cost_func_diff = None # The derivative of the cost function
         
         this.eta = .1 # the learning rate of the network
-        this.lmb = .0 # the regularization parameter
-        
-        # flag for determining wether learning rate should be descending
-        # for each epoch of training
-        this.descending_learning_rate = False
+        this.lmb = .1 # the regularization parameter
+        this.descent_rate_eta = 1 # descent rate of learning rate
 
         # flag determining wether the network can start to learn
         this.compiled = False 
@@ -86,6 +82,11 @@ class NeuralNetwork:
         this.eta = eta # the learning rate of the network
 
     
+    # Set the descent rate of the learning rate for each epoch
+    def set_descent_rate(this, x):
+        this.descent_rate = x
+
+
     # Compile the network
     # This function sets up the network so that it is ready to learn 
     # from a given set of training data. Must be run after the network 
@@ -113,21 +114,21 @@ class NeuralNetwork:
 
         L = len(this.number_of_nodes)
 
-        this.W.append((random.random((n[0], inp)) - .5)*.7/.5)
-        this.b.append((random.random((n[0], 1)) - .5)*.7/.5)
+        this.W.append(random.randn(n[0], inp)*.2)
+        this.b.append(random.randn(n[0], 1)*.2)
         
         for l in range(L-1):
-            this.W.append((random.random((n[l+1],n[l]))-.5)*.7/.5)
-            this.b.append((random.random((n[l+1],1)) - .5)*.7/.5)
+            this.W.append(random.randn(n[l+1],n[l])*.2)
+            this.b.append(random.randn(n[l+1],1)*.2)
         
         # To save time on memory allocation and possibly memory 
         # we let the following variables be public inside this class:
         #
         # set up list of gradients with respect to the weights and biases
         # for each layer
-        this.gradient_W = [zeros(this.W[l].shape) for l in range(L)]
-        this.gradient_b = [zeros(this.b[l].shape) for l in range(L)]
-        this.delta = [None]*L
+        #this.gradient_W = [zeros(this.W[l].shape) for l in range(L)]
+        #this.gradient_b = [zeros(this.b[l].shape) for l in range(L)]
+        #this.delta = [None]*L
         
         this.compiled = True
 
@@ -140,8 +141,13 @@ class NeuralNetwork:
     
     # Generates evenly sized minibatches
     #
-    #@N: Number of elements in total
-    #@b: Number of minibatches to generate
+    # INPUT
+    # @N: Number of elements in total
+    # @b: Number of minibatches to generate
+    #
+    # OUTPUT
+    # @p1 + p2: a list of lists containing the indicies of the inputs
+    #           in each batch
     #
     def generate_minibatches(this, N, b):
         if b == 0:
@@ -158,11 +164,16 @@ class NeuralNetwork:
         return p1 + p2
         
 
-    # Predicts the response/output given a predictor/input
-    # Also saves the activations, z, in the network for the given input
+    # Computes the activations of the network for the given input,
+    # and the resulting output
     #
+    # INPUT
     # @x: the input/predictor for the neural network to predict on as
     #     a row-vector
+    #
+    # OUTPUT
+    # @z: list of column-vectors containing the activations in each layer
+    # @y: the output of the network
     #
     def forward(this, x):
         if not this.compiled:
@@ -171,60 +182,66 @@ class NeuralNetwork:
         
         L = len(this.b)
         
-        # set up list of vectors of activations
+        # set up list of vectors for activations in each layer
         z = [None]*L
 
-        # compute the output
+        # compute the activations
         z[0] = this.W[0].dot(x.T) + this.b[0]
         
         for l in range(1, L):
             z[l] = this.W[l].dot(this.act[l-1](z[l-1])) + this.b[l]
 
+        # compute the output
         y = this.act[L - 1](z[L - 1])
         
         return z, y
     
     
-    # The much talked about backpropagation
+    # The backpropagation algorithm. Computes the derivatives of all 
+    # weights and biases in all layers of network for the input x and
+    # ADDS this to the lists delta and gradient_W
     # 
-    # @x: predictor/input (as ROW VECTOR!)
-    # @z: list of the activations for each layer in the network given x as
-    #     input
+    # INPUT
+    # @x: predictor/input as row-vector
+    # @z: list of the activations (as row vectors) for each layer in the 
+    #     network given x as input
+    # @y: output of the network given x as input
     # @t: targets
+    # @delta: list of deltas (as column vectors) for each layer in network 
+    # @gradient_W: list of weight derivative matrices for each layer in
+    #              the network
     #
-    def back_propagate(this, x, z, t):
-        if not this.compiled:
-            print("Network is not compiled. Use compile().")
-            return
+    def back_propagate(this, x, z, y, t, delta, gradient_W):
+        #if not this.compiled:
+        #    print("Network is not compiled. Use compile().")
+        #    return
         
         # setting up neede variables, lists and so on
         L = len(this.W)
         
         # Compute delta_L-1
-        this.delta[L-1] = this.cost_func_diff(this.act[L-1](z[L-1]), t)*this.act_diff[L-1](z[L-1])
+        delta[L-1] += this.cost_func_diff(this.act[L-1](z[L-1]), t)*this.act_diff[L-1](z[L-1])
         
         # Compute delta_l for l=L-2, L-3, ..., 0
         for l in range(L-2, -1, -1):
             da_dz = this.act_diff[l](z[l])
-            this.delta[l] = this.W[l+1].T.dot(this.delta[l+1])*this.act_diff[l](z[l])
+            delta[l] += this.W[l+1].T.dot(delta[l+1])*da_dz
 
         # compute the gradient w.r.t. the weights
         for l in range(1, L):
-            this.gradient_W[l] = this.delta[l]*this.act[l-1](z[l-1]).T + 2*this.lmb*this.W[l]
+            gradient_W[l] += delta[l]*this.act[l-1](z[l-1]).T + 2*this.lmb*this.W[l]
         
         # special treatment of last iteration
-        this.gradient_W[0] = this.delta[0]*x
-
-        return this.gradient_W, this.delta
+        gradient_W[0] += delta[0]*x
 
 
     # computes the gradient with respect to the weights and biases for a 
     # given sample x 
-    def compute_gradient(this, x, t):
+    def compute_gradient(this, x, t, delta, gradient_W):
+        
         z, y = this.forward(x)
-        gradient_W, gradient_b = this.back_propagate(x, z, t)
 
-        return gradient_W, gradient_b
+        this.back_propagate(x, z, y, t, delta, gradient_W)
 
 
     # Fit yor network using stochastic gradient method
@@ -242,65 +259,37 @@ class NeuralNetwork:
 
         L = len(this.W)
 
-        # FIX: send the gradient list as argument to compute_gradient
-
-        # set up temporary gradient and weight holders and next weights,grds
-        gradient_W = [zeros(this.W[l].shape) for l in range(L)]
-        gradient_b = [zeros(this.b[l].shape) for l in range(L)]
-        W_next = [zeros(this.W[l].shape) for l in range(L)]
-        b_next = [zeros(this.b[l].shape) for l in range(L)]
-        
         this.fitted = True
+        
+        # store initial cost
+        cost_init = sum(this.cost_func(this.predict_probability(X), T))
         
         # The main loop for training the network
         print("Training network ...")
 
-        for k in range(epochs):
-            print("Epoch %s / %s ... " % (k, epochs))
+        for epoch in range(epochs):
+            print("Epoch %s / %s ... " % (epoch + 1, epochs))
             
-            # store initial cost
-            cost = 0
-            cost -= sum(this.cost_func(this.predict_probability(X), T))
-            """
             for batch in batches:
-                cost -= sum(this.cost_func(this.predict_probability(X[batch,:]), T[batch,:]))
-            """
+                # set up storage for derivatives
+                delta = [zeros(this.b[l].shape) for l in range(L)]
+                gradient_W = [zeros(this.W[l].shape) for l in range(L)]
 
-            for batch in batches:
                 for j in batch:
                     # compute the gradient of the costfunction for sample j 
-                    smpl_gradient_W, smpl_gradient_b = this.compute_gradient(X[j:j+1,:], T[j:j+1,:])
-
-                    # add this gradient/N to the total gradient
-                    for l in range(L):
-                        gradient_W[l] += smpl_gradient_W[l]/len(batch)
-                        gradient_b[l] += smpl_gradient_b[l]/len(batch)
+                    this.compute_gradient(X[j:j+1,:], T[j:j+1,:], delta, gradient_W)
 
                 # update weights and biases
                 for l in range(L):
-                    W_next[l] = this.W[l] - this.eta*gradient_W[l]
-                    this.W[l] = W_next[l]
-                    b_next[l] = this.b[l] - this.eta*gradient_b[l]
-                    this.b[l] = b_next[l]
-                
-                # SET GRADIENT TO ZERO
-                gradient_W = [zeros(this.W[l].shape) for l in range(L)]
-                gradient_b = [zeros(this.b[l].shape) for l in range(L)]
-
-    
-            # compute and print increment in cost function
-            # we would of course want this number to be negative 
+                    this.W[l] += this.eta*gradient_W[l]/len(batch)
+                    this.b[l] += this.eta*delta[l]/len(batch)
             
-            cost += sum(this.cost_func(this.predict_probability(X), T))
-            """
-            for batch in batches:
-                cost += sum(this.cost_func(this.predict_probability(X[batch,:]), T[batch,:]))
-            """
+            # compute and print accuracy on test data
+            #print(this.predict_probability(X[1:2,:]))
+            acc = mean(equals(this.predict_class(X), T))            
+            print("Accuracy on training data: %f " % acc)
 
-            print("Cost increment in training data: %f" % cost)
-
-            if (this.descending_learning_rate):
-                this.eta *= .1
+            this.eta *= this.descent_rate_eta
 
 
     # Fit yor network using stochastic gradient method
@@ -330,8 +319,9 @@ class NeuralNetwork:
     #
     def fit_det_batch(this, X, T, number_of_batches, epochs=5):
         # create number_of_batches evenly sized batches
-        batches = generate_minibatces(X.shape[0], number_of_batches)
+        batches = this.generate_minibatches(X.shape[0], number_of_batches)
         
+
         this.fit(X, T, batches, epochs)
 
 
@@ -342,14 +332,18 @@ class NeuralNetwork:
 
 
     # Predicts the response/output given a predictor/input
-    #
+    # 
+    # INPUT
     # @x: the input/predictor for the neural network to predict on as
     #     a row vector
+    # 
+    # OUTPUT
+    # @y.T: the prediction of the network as a row vector
     #
     def predict_probability(this, x):
-        if not this.fitted:
-            print("Network is not fitted. Use compile().")
-            return
+        #if not this.fitted:
+        #    print("Network is not fitted. Use compile().")
+        #    return
         
         y = x.T
         
@@ -357,7 +351,7 @@ class NeuralNetwork:
         for l in range(len(this.W)):
             y = this.act[l](this.W[l].dot(y) + this.b[l])
 
-        return y
+        return y.T
 
 
     # Predicts the class given a predictor/input
@@ -366,21 +360,11 @@ class NeuralNetwork:
     #     a row vector
     #
     def predict_class(this, x):
-        if not this.fitted:
-            print("Network is not fitted. Use compile().")
-            return
+        #if not this.fitted:
+        #    print("Network is not fitted. Use compile().")
+        #    return
         
-        y = x.T
-        
-        # compute the output
-        for l in range(len(this.W)):
-            y = this.act[l](this.W[l].dot(y) + this.b[l])
-
-        #if y > .5:
-        #    return 1
-        #else:
-        #    return 0
-        return around(y)
+        return around(this.predict_probability(x))
 
 
 

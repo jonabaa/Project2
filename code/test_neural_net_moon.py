@@ -1,8 +1,8 @@
-#
+# 
 # This file sets up a neural net and test it on learning on half moon data
-# it gives a pretty good accuracy of 97% ! 
-#
-#
+# 
+# 
+
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -12,15 +12,22 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
+#############
+# Functions #
+#############
+
+
 def generate_data():
     np.random.seed(0)
     X, y = datasets.make_moons(1000, noise=0.20)
     return X, y
 
+
 def visualize(X, y, clf):
     # plt.scatter(X[:, 0], X[:, 1], s=40, c=y, cmap=plt.cm.Spectral)
     # plt.show()
     plot_decision_boundary( lambda x: clf.predict(x), X, y)
+
 
 def plot_decision_boundary(pred_func, X, y):
     # Set min and max values and give it some padding
@@ -37,17 +44,27 @@ def plot_decision_boundary(pred_func, X, y):
     plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
     plt.title("Logistic Regression")
     plt.show()
-    
+
+
 def classify(X, y):
     clf = linear_model.LogisticRegressionCV()
     clf.fit(X, y)
     return clf
 
+
+##########################################
+# Generating training data and test data #
+##########################################
+
+
 X, y = generate_data()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
 
-###############
-# my stuff
+
+#################################
+# Building and training network #
+#################################
+
 
 print("Now building neural network to try to solve the problem")
 
@@ -57,9 +74,8 @@ from functions import *
 model = NeuralNetwork()
 
 # set up and compile the net
-model.add_layer(20, relu, relu_diff)
-model.add_layer(35, relu, relu_diff)
-model.add_layer(20, relu, relu_diff)
+model.add_layer(5, relu, relu_diff)
+model.add_layer(12, relu, relu_diff)
 model.add_layer(1, sigmoid, sigmoid_diff)
 
 model.set_cost_function(cost_crossentr, cost_crossentr_diff)
@@ -68,14 +84,14 @@ model.set_inputnodes(X_train.shape[1])
 model.compile()
 
 # set training rate
-model.set_learning_rate(.0001)
+model.set_learning_rate(.001)
 
 # reshape y_train
 y_train =np.reshape(y_train, (len(y_train), 1))
 
 # train the net
 #model.fit_minibatch(X_train, y_train, 10)
-model.fit_stoc_batch(X_train, y_train, epochs=100, batch_size=80)
+model.fit_stoc_batch(X_train, y_train, epochs=20, batch_size=80)
 
 # check accuracy of net
 acc1 = mean(equals(model.predict_class(X_test), y_test))

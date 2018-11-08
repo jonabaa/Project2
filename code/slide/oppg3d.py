@@ -1,3 +1,6 @@
+def equals(x, y):
+    return (x == y)*1
+
 import numpy as np
 
 import warnings
@@ -18,6 +21,7 @@ T_c=2.26 # Onsager critical temperature in the TD limit
 
 import pickle,os
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 ###### define ML parameters
 num_classes=2
@@ -54,8 +58,9 @@ X_disordered=data[100000:,:]
 Y_disordered=labels[100000:]
 
 """
+
 # divide data into ordered, critical and disordered
-size = 10000
+size = 50000
 
 X_ordered=data[:size,:]
 Y_ordered=labels[:size]
@@ -93,33 +98,20 @@ m = np.mean(Y_test)
 print("mean: " , m)
 # Testing neural net
 
-from NeuralNetwork import NeuralNetwork
-from functions import *
-
-model = NeuralNetwork()
-
-# set up and compile the net
-model.add_layer(20, sigmoid, sigmoid_diff)
-model.add_layer(1, sigmoid, sigmoid_diff)
-model.set_cost_function(cost_crossentr, cost_crossentr_diff)
-model.set_inputnodes(X_train.shape[1])
-model.compile()
+from NeuralNetworkClassification import NeuralNetwork
 
 # reshape Y_train and Y_test
 Y_train = np.reshape(Y_train, (len(Y_train), 1))
 Y_test = np.reshape(Y_test, (len(Y_test), 1))
 
-# set training rate
-model.set_learning_rate(.01)
+model = NeuralNetwork(X_train, Y_train)
 
 # train the net
-# 15 epochs
-# batch size 100 
-model.fit_stoc_batch(X_train, Y_train, epochs=10, batch_size=100)
+model.train()
 
 # predict and compute accuracy of net
-acc1 = mean(equals(model.predict_class(X_test), Y_test))
-acc2 = mean(equals(model.predict_class(X_train), Y_train))
+acc1 = np.mean(equals(model.predict(X_test), Y_test))
+acc2 = np.mean(equals(model.predict(X_train), Y_train))
 
 print("Accuracy on test data:", acc1)
 print("Accuracy on training data:", acc2)
