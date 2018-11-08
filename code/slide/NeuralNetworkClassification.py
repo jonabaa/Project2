@@ -62,6 +62,7 @@ class NeuralNetwork:
         return self.sigmoid(z_o)
 
     def backpropagation(self):
+        #print("Y_data shape: ", self.Y_data.shape)
         error_output = self.probabilities - self.Y_data
         error_hidden = np.matmul(error_output, self.output_weights.T) * self.a_h * (1 - self.a_h)
 
@@ -90,6 +91,8 @@ class NeuralNetwork:
 
     def train(self):
         print("Training ...")
+        print("Y_data_full shape: ", self.Y_data_full.shape)
+        
         data_indices = np.arange(self.n_inputs)
 
         for i in range(self.epochs):

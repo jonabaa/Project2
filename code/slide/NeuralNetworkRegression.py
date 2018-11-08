@@ -7,11 +7,11 @@ class NeuralNetwork:
         self,
         X_data,
         Y_data,
-        n_hidden_neurons=50,
+        n_hidden_neurons=100,
         n_categories=1,
-        epochs=5,
+        epochs=500,
         batch_size=100,
-        eta=0.1,
+        eta=0.001,
         lmbd=0.0,
 
     ):
@@ -35,6 +35,11 @@ class NeuralNetwork:
     def sigmoid(self, x):
         return 1/(1 + exp(-x))
 
+    
+    # Identity function
+    def identity(self, x):
+        return x
+
 
     def create_biases_and_weights(self):
         self.hidden_weights = np.random.randn(self.n_features, self.n_hidden_neurons)
@@ -46,23 +51,27 @@ class NeuralNetwork:
     def feed_forward(self):
         # feed-forward for training
         self.z_h = np.matmul(self.X_data, self.hidden_weights) + self.hidden_bias
+        
         self.a_h = self.sigmoid(self.z_h)
 
         self.z_o = np.matmul(self.a_h, self.output_weights) + self.output_bias
 
-        self.probabilities = self.sigmoid(self.z_o)
+        self.probabilities = self.identity(self.z_o)
 
     def feed_forward_out(self, X):
         # feed-forward for output
         z_h = np.matmul(X, self.hidden_weights) + self.hidden_bias
+
         a_h = self.sigmoid(z_h)
 
         z_o = np.matmul(a_h, self.output_weights) + self.output_bias
         
-        return self.sigmoid(z_o)
+        return self.identity(z_o)
+
 
     def backpropagation(self):
         error_output = self.probabilities - self.Y_data
+        
         error_hidden = np.matmul(error_output, self.output_weights.T) * self.a_h * (1 - self.a_h)
 
         self.output_weights_gradient = np.matmul(self.a_h.T, error_output)
@@ -80,20 +89,19 @@ class NeuralNetwork:
         self.hidden_weights -= self.eta * self.hidden_weights_gradient
         self.hidden_bias -= self.eta * self.hidden_bias_gradient
 
-    def predict(self, X):
-        probabilities = self.feed_forward_out(X)
-        return np.around(probabilities)
 
-    def predict_probabilities(self, X):
-        probabilities = self.feed_forward_out(X)
-        return probabilities
+    def predict(self, X):
+        return self.feed_forward_out(X)
+
 
     def train(self):
         print("Training ...")
         data_indices = np.arange(self.n_inputs)
 
+        print("Y_data_full shape: ", self.Y_data_full.shape)
+        
         for i in range(self.epochs):
-            print("Epoch %s / %s" % (i, self.epochs))
+            print("Epoch %s / %s" % (i + 1, self.epochs))
             for j in range(self.iterations):
                 # pick datapoints with replacement
                 chosen_datapoints = np.random.choice(
