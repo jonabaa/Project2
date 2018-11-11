@@ -1,6 +1,7 @@
-from utilities import SumOneToN, RSS, MSE, R2Score
+from project1.utilities import RSS, MSE, R2Score
 import numpy as np
 import scipy.stats as st
+
 
 class RidgeLinearModel:
     covariance_matrix = None # covariance matrix of the model coefficients
@@ -17,72 +18,71 @@ class RidgeLinearModel:
     y_tilde_updated = False
 
 
-    def __init__(this, lmb, k):
-        this.lmb = lmb # set lambda of model
-        this.k = k # set order of polynomial
+    def __init__(this, lmb=.01):
+        this.lmb = lmb
+
+
+    def set_params(this, alpha=.1):
+        this.lmb = alpha
+    
+
+    # This function sets up the design matrix for our Ising problem
+    #
+    # @X: N x p matrix containing the input
+    # 
+    def design(this, X):
+        parts = [X*X[:][i:i+1] for i in range(X.shape[1])]
+        return -np.concatenate(parts, axis=1)
 
     
-    # This function fits the model to the the sample data
-    # using Ridge regression
+    # This function fits the model to your data
     #
-    # @x: array containing predictors
-    # @y: array containing responses
+    # @X: The design matrix
+    # @y: The targets/output
     #
-    def design(this, x1, x2):
-        # store x ands y for later computations
-        this.x1 = x1
-        this.x2 = x2
-
-        # calculate the dimensions of the design matrix
-        m = x1.shape[0]
-        n = SumOneToN(this.k + 1)
-
-        # allocate design matrix
-        this.X = np.ones((m, n))
-
-        # compute values of design matrix
-        for i in range(m): # vectoriser denne løkka
-            for p in range(this.k):
-                for j in range(SumOneToN(p + 2) - SumOneToN(p + 1)):
-                    this.X[i][SumOneToN(p + 1) + j] *= x1[i]**(p
-                            + 1 - j)*x2[i]**j
-        return this.X
-
-
-    def fit(X, y):
-        # store y for later use
-        this.y = y
+    def fit(this, X, y):
         # compute linear regression coefficients
         this.beta = np.linalg.pinv(X.T.dot(X) +
                 this.lmb*np.identity(X.shape[1])).dot(X.T).dot(y)
 
-        # stored statistical parameters are no longer valid
-        this.set_updated_to_false()
+        this.coef_ = this.beta
 
 
     # Predicts and returns the responses of the predictors with
-    # the fitted model if the model is fitted
+    # the fitted model
     #
-    # @x1: Columnvector containing the first predictor values
-    # @x2: Columnvector containing the second predictor values
+    # @X: N x p matrix containing the input
     #
-    def predict(this, x1, x2):
+    def predict(this, X):
         if this.beta is None:
             print("Error: Model is not fitted.")
             return None
         else:
-            # allocate meshgrid filled with constant term
-            y = np.ones(x1.shape)*this.beta[0]
+            #parts = [X*X[:,i:i+1] for i in range(X.shape[1])]
+            #X = np.concatenate(parts, axis=1)
 
-            # compute function values
-            for p in range(this.k):
-                for j in range(SumOneToN(p + 2) - SumOneToN(p + 1)):
-                    y += this.beta[SumOneToN(p + 1)
-                            + j]*x1**(p+1-j)*x2**j
+            return X.dot(this.beta)
 
-            return y
+    
+    def get_beta(this):
+        return this.beta
 
 
+    # Returns the R2-score of the model on the given data
+    #
+    # @X: input
+    # @y: output
+    #
+    def score(this, X, y):
+        return R2Score(y, this.predict(X))
+
+
+
+    #############
+    # Old stuff #
+    #############
+
+"""
     # Returns the residuals of the model squared and summed
     def get_RSS(this, x1, x2, y):
         if this.beta is None:
@@ -183,3 +183,5 @@ class RidgeLinearModel:
         var_vector_updated = False
         y_tilde_updated = False
         CIbeta_updated = False
+
+"""

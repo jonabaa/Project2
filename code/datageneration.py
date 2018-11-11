@@ -25,13 +25,13 @@ def ising_energies(states,L):
 
 
 # system size
-def generate_data(L):
-    # create 10000 random Ising states
-    states = np.random.choice([-1, 1], size=(10000,L))
+def generate_data(L, N):
+    # create N random Ising states
+    states = np.random.choice([-1, 1], size=(N,L))
 
     # calculate Ising energies
     energies = ising_energies(states,L)
 
-    return states, energies
+    return states, np.reshape(energies, (len(energies), 1))
 
 

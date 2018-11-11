@@ -20,30 +20,74 @@
 \begin{document}
 \maketitle
 
+%The last couple of years different machine learning techniques have
+%gained enormous popularity due to several factors. 
+%In this project we aim to
+%evaluate the performance of these two methods on an often studied problem
+%in physics.
+%\par
+%First we use both methods to predict the energy of the system. Then we 
+%apply both methods over again to predict the phases of the systems.
+
 \section{Introduction}
-The one sentence about what machine learning is for the new guy.
-
-The concept of machine learning have gained hughe popularity over the 
-last couple of years. Different machine learning techniques 
-have a wide range of applications and can be a major asset if you know when 
-to use what. When to use what is exactly what we're going to have a brief
-peek into in this project.
-
-The last couple of years different machine learning techniques have
-gained enormous popularity due to several factors. 
-
-Two widely used machine learning methods
-are logistic regression and neural networks. In this project we aim to
-evaluate the performance of these two methods on an often studied problem
-in physics.
+%The one sentence about what machine learning is for the new guy.
+The concept of machine learning have gained a hughe popularity boost over 
+the last couple of years. And this is no wonder, the techniques 
+have a wide range of applications and can be a major asset. 
+That is if you know when to use what.
 \par
-First we use both methods to predict the energy of the system. Then we 
-apply both methods over again to predict the phases of the systems.
-\section{Method}
+When to use what is exactly what we're going to have a brief
+peek into in this project. Two widely used machine learning methods
+are regression analysis and neural networks. 
+We aim to evaluate the performance of these two methods in 
+two different cases. 
+First we look at the problem of predicting a scalar,
+then we compare the two methods in the case of 
+a classification problem. In both cases we use the much studied 
+Ising model to generate our dataset.
 
-\subsection{Logistic Regression}
+\section{Method}
+In order to present the methods used, 
+we first need to establish some notation.
+In the following we assume that we are given a dataset consisting of 
+$N \in \mathbb{N}$ samples, where each sample consists of $p$ predictors
+and one response. We then denote by $x_{ij}$ the $j$-th predictor of
+the $i$-th sample and by $t_i$ the response of the $i$-th sample.
+\par
+For all supervised learning methods the basic concept is the same:
+You want to fit a model to your trainingdata by minimizing some sort of 
+error. This is of course also the case for regression analysis and neural 
+networks. 
+
+\subsection{Regression analysis}
+\subsubsection{Linear regression}
+\subsubsection{Logistic regression}
+
 
 \subsection{Neural Networks}
+When dealing with neural networks, the overarching concept is still the 
+same as when one does regression analysis: We have a model that we wish 
+to fit to a dataset by minimizing some error. The difference 
+is the model and the methods by which we minimze the error.
+\par
+Again, as the scope of this text is not to fully explain neural networks
+rather than to analyse it's performance in some special cases, we will
+simply establish the needed notation and assumptions. For a thorough
+explanation of neural networks consult CITATION.
+\par
+We will use a sequential multilayered network with $L$ layers as our model.
+Let the number of nodes in layer $l$ be denoted by $N^l$ and let 
+$N^0 = N$. We then denote
+by $W^l \in \mathbb{R}^{N^l \times N^{l-1}}$ and 
+$\bm{b}^l \in \mathbb{R}^{N^l}$ the weight matrix and bias 
+vector of layer $l$ respectively. 
+Finally we denote by $f^l: \mathbb{R}^{N^l} \rightarrow \mathbb{R}^{N^l}$ 
+the activation function of 
+layer $l$. Our model is then given by
+\begin{equation}
+    f^L( \dots f^2(W^2 f^1(W^1 \bm{x} + \bm{b}^1) + \bm{b}^2) 
+    + \dots + \bm{b}^L)
+\end{equation}
 
 \subsection{Performance measures}
 

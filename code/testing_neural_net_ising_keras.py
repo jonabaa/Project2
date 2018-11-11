@@ -53,15 +53,9 @@ Y_critical=labels[70000:100000]
 X_disordered=data[100000:,:]
 Y_disordered=labels[100000:]
 
-del data,labels
-
-# define training and test data sets
-X=np.concatenate((X_ordered,X_disordered))
-Y=np.concatenate((Y_ordered,Y_disordered))
 """
-
 # divide data into ordered, critical and disordered
-size = 4000
+size = 10000
 
 X_ordered=data[:size,:]
 Y_ordered=labels[:size]
@@ -76,85 +70,67 @@ del data,labels
 
 # define training and test data sets
 X=np.concatenate((X_ordered,X_disordered))
-Y=np.concatenate((Y_ordered,Y_disordered))
+Y=np.reshape(np.concatenate((Y_ordered,Y_disordered)),(Y_ordered+Y_disordered, 1))
+Y=np.concatenate((Y, (Y - 1)**2), axis=1)
+
 # pick random data points from ordered and disordered states 
 # to create the training and test sets
-X_train,X_test,Y_train,Y_test=train_test_split(X,Y,train_size=train_to_test_ratio)
+X_train, X_test, Y_train, Y_test = train_test_split(X,Y,train_size=train_to_test_ratio)
 
 # full data set
-X=np.concatenate((X_critical,X))
-Y=np.concatenate((Y_critical,Y))
+#X=np.concatenate((X_critical,X))
+#Y=np.concatenate((Y_critical,Y))
 
 print('X_train shape:', X_train.shape)
 print('Y_train shape:', Y_train.shape)
+
 print()
+
 print(X_train.shape[0], 'train samples')
 print(X_critical.shape[0], 'critical samples')
 print(X_test.shape[0], 'test samples')
 
-# Testing my own regression method
-from LogisticRegressionModel import LogisticRegressionModel
-from functions import equals 
+m = np.mean(Y_test)
 
-model = LogisticRegressionModel()
+print("mean: " , m)
+# Testing neural net
 
-# set up design matrix
-Xd = model.design_matrix(X_train)
+# reshape Y_train and Y_test
+Y_train = np.reshape(Y_train, (len(Y_train), 1))
+Y_test = np.reshape(Y_test, (len(Y_test), 1))
+from functions import *
+import tensorflow as tf
+import pandas as pd
+from sklearn.model_selection import train_test_split
 
-# set up targets/responses
-Y_train = Y_train.reshape((len(Y_train),1))
 
-# print shapes of training data 
-print('X_train shape:', X_train.shape)
-print('Xd shape:', Xd.shape)
-print('Y_train shape:', Y_train.shape)
+# specify the neural network
+model = tf.keras.Sequential()
+model.add(tf.keras.layers.Dense(128, activation='relu', input_dim=X.shape[1]))
+model.add(tf.keras.layers.Dropout(.3))
+model.add(tf.keras.layers.Dense(64, activation='relu'))
+model.add(tf.keras.layers.Dropout(.3))
+model.add(tf.keras.layers.Dense(32, activation='relu'))
+model.add(tf.keras.layers.Dropout(.3))
+model.add(tf.keras.layers.Dense(Y_train.shape[1], activation='softmax'))
 
-# fit and print accuracy for gradient descent
-iters = 100
-model.fit_gradient_descent(Xd, Y_train, .001,     iters, 0)
+# compile the model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-acc = 0
+model.fit(X_train, Y_train, epochs=100, batch_size=32, validation_data=[X_test, Y_test])
 
-for i in range(X_test.shape[0]):
-    acc += equals(model.predict_class(X_test[i:i+1,:]), Y_test[i])
+# print accuracy and save model
+print('accuracy:', model.evaluate(X_test, Y_test))
 
-acc /= X_test.shape[0]
 
-print("Accuracy grad descent:", acc)
 
-# fit and print accuracy for Newton Raphson
-iters = 10
-model.fit_Newton_Raphson(Xd, Y_train, iters)
 
-acc = 0
 
-for i in range(X_test.shape[0]):
-    acc += equals(model.predict_class(X_test[i:i+1,:]), Y_test[i])
 
-acc /= X_test.shape[0]
+# predict and compute accuracy of net
+#acc1 = mean(equals(model.predict_class(X_test), Y_test))
+#acc2 = mean(equals(model.predict_class(X_train), Y_train))
 
-print("Accuracy Newton Raphson:", acc)
-
-# fit and print accuracy for stochastic gradient descent
-iters = 1000
-model.fit_stoc_grad_descent(Xd, Y_train, .01, iters, 100)
-
-acc = 0
-
-for i in range(X_test.shape[0]):
-    acc += equals(model.predict_class(X_test[i:i+1,:]), Y_test[i])
-
-acc /= X_test.shape[0]
-
-print("Stochastic gradient descent:", acc)
-
-# fit and print accuracy scikit learn
-from sklearn.linear_model import LogisticRegression
-
-log_reg = LogisticRegression()
-log_reg.fit(X_train, Y_train)
-
-acc = log_reg.score(X_test, Y_test)
-
-print("Scikit learn accuracy:", acc)
+print("Accuracy on test data:", acc1)
+print("Accuracy on training data:", acc2)
 
