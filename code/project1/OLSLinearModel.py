@@ -1,10 +1,10 @@
-from RidgeLinearModel import RidgeLinearModel
+from project1.RidgeLinearModel import RidgeLinearModel
 import numpy as np
-from utilities import *
+from project1.utilities import *
 
 class OLSLinearModel(RidgeLinearModel):
-    def __init__(this, k):
-        RidgeLinearModel.__init__(this, 0, k)
+    def __init__(this):
+        RidgeLinearModel.__init__(this, 0)
 
     # Computes and returns the covariance matrix of the coefficients of
     # the model function (beta)

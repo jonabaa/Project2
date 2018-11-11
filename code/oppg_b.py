@@ -1,4 +1,5 @@
 from project1.RidgeLinearModel import RidgeLinearModel
+from project1.OLSLinearModel import OLSLinearModel
 from datageneration import *
 from project1.utilities import RSS, MSE, R2Score
 from sklearn import linear_model
@@ -9,40 +10,26 @@ import seaborn
 
 
 L = 40 # set number of predictors for each sample
-N = 500 # set number of samples
+N = 1000 # set number of samples
 
 # generate data
 states, energies = generate_data(L, N)
-
-# reshape Ising states into RL samples: S_iS_j --> X_p
+print(states.shape)
+print(energies.shape)
+# set up design matrix
 states=np.einsum('...i,...j->...ij', states, states)
 shape=states.shape
 states=states.reshape((shape[0],shape[1]*shape[2]))
-
-"""
-# build final data set
-Data=[states,energies]
-
-
-# define number of samples
-n_samples=500
-
-# define train and test data sets
-X_train=Data[0][:n_samples]
-Y_train=Data[1][:n_samples] #+ np.random.normal(0,4.0,size=X_train.shape[0])
-X_test=Data[0][n_samples:3*n_samples//2]
-Y_test=Data[1][n_samples:3*n_samples//2] #+ np.random.normal(0,4.0,size=X_test.shape[0])
-"""
-
-X_train, X_test, Y_train, Y_test = train_test_split(states, energies, train_size= .5)
+print(states.shape)
+# splitting into training- and testdata
+X_train, X_test, Y_train, Y_test = train_test_split(states, energies, train_size= .4)
 
 # set up Lasso and Ridge Regression models
-leastsq = linear_model.LinearRegression()
+leastsq = OLSLinearModel()
 ridge = RidgeLinearModel()
-#ridge = linear_model.Ridge()
 lasso = linear_model.Lasso()
 
-# define error lists
+# set up error lists
 train_errors_leastsq = []
 test_errors_leastsq = []
 
@@ -52,44 +39,56 @@ test_errors_ridge = []
 train_errors_lasso = []
 test_errors_lasso = []
 
-# set refularisations trength values
+# set up list of lambdas
 lmbdas = np.logspace(-4, 5, 10)
 
-#Initialize coeffficients for ridge regression and Lasso
+# Initialize coeffficients for ridge regression and Lasso
 coefs_leastsq = []
 coefs_ridge = []
 coefs_lasso=[]
 
+# settting up lists of coefficient matrices
+J_matrix_leastsq = []
+J_matrix_ridge = []
+J_matrix_lasso = []
+
 for lmbda in lmbdas:
     
-    ### ordinary least squares
+    # OLS regression
     leastsq.fit(X_train, Y_train) # fit model 
-    coefs_leastsq.append(leastsq.coef_) # store weights
+    coefs_leastsq.append(leastsq.get_beta()) # store weights
     # use the coefficient of determination R^2 as the performance of prediction.
     train_errors_leastsq.append(leastsq.score(X_train, Y_train))
     test_errors_leastsq.append(leastsq.score(X_test,Y_test))
     
-    ### apply Ridge regression
-    ridge.set_params(alpha=lmbda) # set regularisation parameter
+    # Ridge regression
+    ridge.set_lmb(lmbda) # set regularisation parameter
     ridge.fit(X_train, Y_train) # fit model 
-    coefs_ridge.append(ridge.coef_) # store weights
+    coefs_ridge.append(ridge.get_beta()) # store weights
     # use the coefficient of determination R^2 as the performance of prediction.
     train_errors_ridge.append(ridge.score(X_train, Y_train))
     test_errors_ridge.append(ridge.score(X_test,Y_test))
     
-    ### apply Ridge regression
+    # Lasso regression
     lasso.set_params(alpha=lmbda) # set regularisation parameter
     lasso.fit(X_train, Y_train) # fit model
     coefs_lasso.append(lasso.coef_) # store weights
     # use the coefficient of determination R^2 as the performance of prediction.
     train_errors_lasso.append(lasso.score(X_train, Y_train))
     test_errors_lasso.append(lasso.score(X_test,Y_test))
-    """
+    
+    
+    
     ### plot Ising interaction J
     J_leastsq=np.array(leastsq.coef_).reshape((L,L))
     J_ridge=np.array(ridge.coef_).reshape((L,L))
     J_lasso=np.array(lasso.coef_).reshape((L,L))
 
+    J_matrix_leastsq.append(J_leastsq)
+    J_matrix_ridge.append(J_ridge)
+    J_matrix_lasso.append(J_lasso)
+    
+    """
     cmap_args=dict(vmin=-1., vmax=1., cmap='seismic')
 
     fig, axarr = plt.subplots(nrows=1, ncols=3)
@@ -118,7 +117,38 @@ for lmbda in lmbdas:
     plt.show()
     """
 
-# Plot our performance on both the training and test data
+# Compute error in J's
+# set up true J
+
+J=np.zeros((L,L),)
+for i in range(L):
+    J[i,(i+1)%L]-=1.0
+
+mse_coefs_OLS = [np.mean((J_matrix_leastsq[i] - J)**2) 
+        for i in range(len(J_matrix_leastsq))]
+mse_coefs_ridge = [np.mean((J_matrix_ridge[i] - J)**2) 
+        for i in range(len(J_matrix_ridge))]
+mse_coefs_lasso = [np.mean((J_matrix_lasso[i] - J)**2) 
+        for i in range(len(J_matrix_lasso))]
+
+
+
+# Plot errors in J's
+plt.semilogx(lmbdas, mse_coefs_OLS, 'b',label='OLS')
+plt.semilogx(lmbdas, mse_coefs_ridge, 'r',label='Ridge')
+plt.semilogx(lmbdas, mse_coefs_lasso, 'g',label='Lasso')
+
+fig = plt.gcf()
+plt.title("MSE in coupling constant J")
+plt.legend(loc='lower left',fontsize=16)
+plt.xlim([min(lmbdas), max(lmbdas)])
+plt.xlabel(r'$\lambda$',fontsize=16)
+plt.ylabel('MSE',fontsize=16)
+plt.savefig("MSE_J.png")
+plt.show()
+
+
+# Plot R2-score on both the training and test data
 plt.semilogx(lmbdas, train_errors_leastsq, 'b',label='Train (OLS)')
 plt.semilogx(lmbdas, test_errors_leastsq,'--b',label='Test (OLS)')
 plt.semilogx(lmbdas, train_errors_ridge,'r',label='Train (Ridge)',linewidth=1)
@@ -135,9 +165,11 @@ plt.legend(loc='lower left',fontsize=16)
 plt.ylim([-0.01, 1.01])
 plt.xlim([min(lmbdas), max(lmbdas)])
 plt.xlabel(r'$\lambda$',fontsize=16)
-plt.ylabel('Performance',fontsize=16)
+plt.ylabel('R2Score',fontsize=16)
 plt.tick_params(labelsize=16)
+plt.savefig("R2_score.png")
 plt.show()
+
 
 """
 # make instance of ridge linear model

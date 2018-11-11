@@ -11,9 +11,6 @@ class RidgeLinearModel:
     var_vector_updated = False
     CIbeta = None # confidence interval of betas
     CIbeta_updated = False
-    x1 = None # first predictor of sampledata
-    x2 = None # second predictor of sampledata
-    y = None # responses of sampledata
     y_tilde = None # model predictions for x
     y_tilde_updated = False
 
@@ -22,8 +19,8 @@ class RidgeLinearModel:
         this.lmb = lmb
 
 
-    def set_params(this, alpha=.1):
-        this.lmb = alpha
+    def set_lmb(this, lmb):
+        this.lmb = lmb
     
 
     # This function sets up the design matrix for our Ising problem
@@ -58,9 +55,6 @@ class RidgeLinearModel:
             print("Error: Model is not fitted.")
             return None
         else:
-            #parts = [X*X[:,i:i+1] for i in range(X.shape[1])]
-            #X = np.concatenate(parts, axis=1)
-
             return X.dot(this.beta)
 
     
