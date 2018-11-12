@@ -13,8 +13,8 @@ class NeuralNetwork:
         batch_size=100,
         eta=0.001,
         lmbd=0.0,
-
     ):
+
         self.X_data_full = X_data
         self.Y_data_full = Y_data
 
@@ -47,6 +47,7 @@ class NeuralNetwork:
 
         self.output_weights = np.random.randn(self.n_hidden_neurons, self.n_categories)
         self.output_bias = np.zeros(self.n_categories) + 0.01
+
 
     def feed_forward(self):
         # feed-forward for training
