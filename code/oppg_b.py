@@ -10,17 +10,16 @@ import seaborn
 
 
 L = 40 # set number of predictors for each sample
-N = 1000 # set number of samples
+N = 2000 # set number of samples
 
 # generate data
 states, energies = generate_data(L, N)
-print(states.shape)
-print(energies.shape)
+
 # set up design matrix
 states=np.einsum('...i,...j->...ij', states, states)
 shape=states.shape
 states=states.reshape((shape[0],shape[1]*shape[2]))
-print(states.shape)
+
 # splitting into training- and testdata
 X_train, X_test, Y_train, Y_test = train_test_split(states, energies, train_size= .4)
 
@@ -144,7 +143,7 @@ plt.legend(loc='lower left',fontsize=16)
 plt.xlim([min(lmbdas), max(lmbdas)])
 plt.xlabel(r'$\lambda$',fontsize=16)
 plt.ylabel('MSE',fontsize=16)
-plt.savefig("MSE_J.png")
+plt.savefig("MSE_J_N2000_train4_test6.png")
 plt.show()
 
 
@@ -167,7 +166,7 @@ plt.xlim([min(lmbdas), max(lmbdas)])
 plt.xlabel(r'$\lambda$',fontsize=16)
 plt.ylabel('R2Score',fontsize=16)
 plt.tick_params(labelsize=16)
-plt.savefig("R2_score.png")
+plt.savefig("R2_score_N2000_train4_test6.png")
 plt.show()
 
 
