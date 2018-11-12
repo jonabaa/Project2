@@ -81,8 +81,33 @@ error. The model and minimization methods however are different.
 
 \subsection{Regression analysis}
 \subsubsection{Linear regression}
-For an explanation of the concept of linear regression consult CITATION.
-The only difference in 
+The concept of linear regression should by now be known from 
+\cite{baarravndal}. 
+The only difference in this project is that we now have $p=L$ predictors 
+instead of $2$ and a fixed model instead of several different models
+of different complexity. Since our model is given by
+\begin{equation}
+    E = \sum_{i,j=1}^L \bm{J}_{i,j} x_i x_j
+\end{equation}
+where $\bm{J}_{i,j}$ is the coupling constant from spin $i$ to spin $j$,
+our design matrix is now given by
+\begin{equation}\begin{split}
+    X \ = \
+    \begin{bmatrix}
+        x_{1,1}x_{1,1} &\dots &x_{1,1} x_{1,L}
+        &\dots
+        &x_{1,L}x_{1,1}  &\dots &x_{1,L} x_{1,L} \\
+        x_{2,1}x_{2,1}  &\dots &x_{2,1} x_{2,L}
+        &\dots
+        &x_{2,L}x_{2,1} &\dots &x_{2,L} x_{2,L} \\
+        \vdots &&\vdots &&&&\vdots\\ 
+        x_{N,1}x_{N,1} &\dots &x_{N,1} x_{N,L}
+        &\dots
+        &x_{N,L}x_{N,1} &\dots &x_{N,L} x_{N,L}
+    \end{bmatrix}
+\end{split}\end{equation}
+Apart from this little twist the procedure is exactly the same as in 
+\cite{baarravndal}.
 \subsubsection{Logistic regression}
 When the output of a dataset is categorical, logistic
 regression is a possible method for developing a model for the 
@@ -117,7 +142,20 @@ where $\log$ is the natural logarithm.
 As opposed to some cases of linear regression, there is no analytical
 solution to the problem of minimizing this cost function. We therefore
 have to resort to numerical methods to approximate a minimum. This will
-be discussed in section 2.3.
+be discussed in section 2.3. Anyway we will need the gradient and Hessian
+of $C$ in order to apply these methods. These are
+\begin{equation}
+    \nabla C(\beta_0, \bm{\beta}) \ = \
+    \sum_{i=1}^N \bm{x}_i(t_i - p(\bm{x}_i; \beta_0, \bm{\beta}))
+\end{equation}
+and
+\begin{equation}
+    \frac{\partial^2 C(\beta_0, \bm{\beta})}
+    {\partial \beta \partial \beta^T} \ = \
+    - \sum_{i=1}^N \bm{x}_i \bm{x_i}^T 
+    p(\bm{x}_i; \beta_0, \bm{\beta})(1 - p(\bm{x}_i; \beta_0, \bm{\beta}))
+\end{equation}
+respectively.
 
 \subsection{Neural Networks}
 When dealing with neural networks, the overarching concept is still the 
@@ -125,10 +163,10 @@ same as when one does regression analysis: We have a model that we wish
 to fit to a dataset by minimizing some error. The difference 
 is the model and the methods by which we minimze the error.
 \par
-Again, as the scope of this text is not to fully explain neural networks
+As the scope of this text is not to fully explain neural networks
 rather than to analyse it's performance in some special cases, we will
 simply establish the needed notation and assumptions. For a thorough
-explanation of neural networks consult CITATION.
+explanation of neural networks consult \cite{hastie_NN}.
 \par
 We will use a sequential multilayered network with $L$ layers as our model.
 Let the number of nodes in layer $l$ be denoted by $n^l$ and let 
@@ -146,46 +184,96 @@ given by $h: \mathbb{R}^p \rightarrow [0,1]$ defined by
     + \dots + \bm{b}^L)
 \end{equation}
 
-\subsubsection{Two different costfunctions}
+%\subsubsection{Two different costfunctions}
 
-\subsubsection{Activation functions}
+%\subsubsection{Activation functions}
 
-\subsubsection{Activation functions}
+%\subsubsection{Activation functions}
 There are several activationfunctions: Sigmoid, relu, softmax, 
 leaky relu, tanh and
 so on. Since we basicly are faced with a forest of parameters to tweak
-when working with neural nets, we've limited ourselves to try out just a 
-few in this project:
-\begin{itemize}
-    \item
-        The \textbf{Sigmoid} function is given by 
-        \begin{equation}
-            f(z) = \frac{1}{1 + \exp(-z)}
-        \end{equation}
-    \item
-        \textbf{Relu}
-    \item
-        \textbf{Softmax}
-    \item
-        \textbf{tan h}
-\end{itemize}
+when working with neural nets, we've limited ourselves to try out just a
+few in this project.
+%\begin{itemize}
+%    \item
+%        The \textbf{Sigmoid} function is given by 
+%        \begin{equation}
+%            f(z) = \frac{1}{1 + \exp(-z)}
+%        \end{equation}
+%    \item
+%        \textbf{Relu}
+%    \item
+%        \textbf{Softmax}
+%    \item
+%        \textbf{tan h}
+%\end{itemize}
 
 \subsection{Gradient methods}
 As we have now seen, there is no analytical solutuion to the problem
 of minimizing the cost function when dealing with both logistic regression
 and neural networks. For this reason we need to consider some numerical 
-methods for approxiamting the minimium.
+methods for approximating the minimium. All these methods have one 
+weakness in common, they might end up finding local minima. However 
+if the functions we are minimizing are convex, we are guaranteed to find
+the global minima. Luckily most of the functions we are interested in
+minimizing are convex. (If they are concave, the negative of the function
+is concave and we can maximize this instead.)
 
 \subsubsection{Gradient descent}
-\subsubsection{Gradient descent using minibatches}
-\subsubsection{Stochastic gradient descent}
+The perhaps simplest approach to minimizing a real valued function
+$f$ iteratively, is to set some starting point $\bm{x}_0$, compute the gradient
+$\nabla f$ in $\bm{x}_0$, and move $\eta > 0$ in the opposite direction of 
+this gradient in order to obtain 
+$\bm{x}_1 = \bm{x}_0 - \eta \nabla f(\bm{x}_0)$. Then
+one iterates by setting 
+$\bm{x}_{i+1} = \bm{x}_i - \eta \nabla f\bm{(}x_0)$. 
+This is the framework of gradient descent.
+For small enough $\eta$ this implies $f(\bm{x}_i) > f(\bm{x}_{i+1})$. 
+The problem with this approach is to find out what 
+$\eta$ is small enough. If we choose
+$\eta$ too small, it might take days for our algorithm to converge. If 
+we on the contrary choose $\eta$ to big, it might not converge at all.
+
 \subsubsection{Newton-Raphson}
+The Newton-Raphson method is a kind of gradient descent method, 
+except we choose the learning rate in a more clever way. We thus 
+start out by choosing a random starting point $\bm{x}_0$, just as in the 
+case of gradient descent. The update step however is a bit different:
+\begin{equation}
+    \bm{x}_{i+1} \ = \ \bm{x}_{i} - 
+    \frac{\partial^2 f(\bm{x}_i)}{\partial \bm{x}_i \partial \bm{x}_i^T} 
+    \frac{\partial f(\bm{x}_i)}{\partial \bm{x}_i}
+\end{equation}
+The result is a method that converges way faster than normal gradient 
+descent. The draw back is however the need to compute the Hessian of 
+your objective function. For a thourough derivation of this method 
+consult \cite{gradient}
+
+\subsubsection{Stochastic gradient descent}
+To avoid overfitting when training neural networks, training on 
+randomly picked batches of the training data for each iteration is a good
+regularization method. If we let $b$ be our batch size, the first step of
+this method consists of dividing the training data into $N//b$ batches. 
+One does this by picking from the $N$ data-points without replacement. 
+The second step is then to perform a gradient descent as described in 
+section 2.3.1 with a new batch for each iteration.
 
 \subsection{Performance measures}
-\subsubsection{MSE, R2-score, Bias, Variance}
+\subsubsection{MSE, R2-score, Bias and Variance}
 For an explanation of the MSE, R2-score, bias and variance please
-consult CITATIONDOF;D.
+consult \cite{baarravndal}.
 \subsubsection{Accuracy score}
+For classification problems with multiple categories the performance
+measures we derived in \cite{baarravndal} is not well defined.
+Therefore in order to measure the performance of our classification models,
+we define the following measure
+\begin{equation}
+    \text{Accuracy} = 1/N \sum_{i=1}^N \chi_{\{t_i\}}(y_i)
+\end{equation}
+where $\chi_{\{t_i\}}$ is the indicator function for the set
+$\{t_i\}$ and $y_i$ is the class predicted by our model. 
+In other words, the accuracy is the ratio of correct classifications 
+over the total number of classifications.
 
 \subsection{The Ising model}
 The model we use to generate data for our experiments is the well known
@@ -198,10 +286,13 @@ spins,
 $s_k = \pm 1$ are the spin values, $N$ is the total number of spins and $J$ is the coupling 
 constant that expresses the strength of the interaction between 
 neighbouring spins. For a more thorough explanation of this model
-consult CITAZIOONNNTT.
+consult \cite{ising}.
 
 \section{Implementation}
-Implementation is done in python.
+Implementation of the logsitic regression and neural networks was done 
+with Python. We've chosen to implement each of the models as classes. 
+The full code with test is located at 
+https://github.com/jonabaa/Project2.git
 
 \section{Analysis of the methods}
 \subsection{Estimating the coupling constant of the one-dimensional 
@@ -214,10 +305,12 @@ the onedimensional version of the model. We denote the coupling constants
 of the general Ising model by $\bm{J}$.
 None of the methods yielded useable models before $N_t$ was larger than
 $200$, hence we used $N_t=400$ (and $N_v=600$) in our further
-investigations. We should look at different dataset sizes
-because it seems like Lasso is the first one to perfrom, and then 
-the other ones follow, BUT the coiplingconstants are best estimated
-by Lasso still for high numbers of samples. that is 2000.
+investigations. 
+
+%We should look at different dataset sizes
+%because it seems like Lasso is the first one to perfrom, and then 
+%the other ones follow, BUT the coiplingconstants are best estimated
+%by Lasso still for high numbers of samples. that is 2000.
 \par
 As one can see from figure 1, Lasso regression with 
 $10^{-3} < \lambda < 10^{-1}$ clearly outperforms the two other methods
@@ -234,9 +327,10 @@ We performed a grid search over the regularization parameter $\lambda$
 and the size of the training data set. This showed that 
 neural networks can do very well predicting enrgies, 
 with R2-scores exceeding $99\%$. The only draw back is the need for 
-large amounts of datapoints for training. As the plot suggests we
-need roughly ten to hundred times as much data as when using
-lasso regression.
+large amounts of datapoints for training. 
+%As the plot suggests we
+%need roughly ten to hundred times as much data as when using
+%lasso regression.
 
 \subsection{Determining the phase of the two-dimensional Ising model using
 logistic regression}
@@ -248,7 +342,7 @@ for $N=3000$.
 
 \subsection{Determining the phase of the two-dimensional Ising model using
 deep neural networks}
-Classification seems to be some of the strengths of neuiral networks, at
+Classification seems to be some of the strengths of neural networks, at
 least in this case. We did a grid search over different regularization
 paramters and training data sizes and managed to make models that
 predicted with accuracys well over $97\%$, which must be considered to
@@ -256,7 +350,7 @@ be very good.
 
 \section{Conclusion}
 The clearest result from this investigation would be that logistic
-regression don't perform well on classifying wether a spin
+regression don't perform well in the case of classifying wether a spin
 configuration is stable or unstable. Deep neural networks, on the contrary,
 performs the task of classification very well.
 \par

@@ -10,7 +10,7 @@ import seaborn
 
 
 L = 40 # set number of predictors for each sample
-N = 2000 # set number of samples
+N = 5000 # set number of samples
 
 # generate data
 states, energies = generate_data(L, N)
@@ -77,7 +77,6 @@ for lmbda in lmbdas:
     test_errors_lasso.append(lasso.score(X_test,Y_test))
     
     
-    
     ### plot Ising interaction J
     J_leastsq=np.array(leastsq.coef_).reshape((L,L))
     J_ridge=np.array(ridge.coef_).reshape((L,L))
@@ -87,7 +86,7 @@ for lmbda in lmbdas:
     J_matrix_ridge.append(J_ridge)
     J_matrix_lasso.append(J_lasso)
     
-    """
+    
     cmap_args=dict(vmin=-1., vmax=1., cmap='seismic')
 
     fig, axarr = plt.subplots(nrows=1, ncols=3)
@@ -113,8 +112,10 @@ for lmbda in lmbdas:
     
     fig.subplots_adjust(right=2.0)
     
+    filename = "Coefs_N500_train4_test6_lmbda" + lmbda + ".png"
+    plt.savefig(filename)
     plt.show()
-    """
+    
 
 # Compute error in J's
 # set up true J
@@ -143,7 +144,7 @@ plt.legend(loc='lower left',fontsize=16)
 plt.xlim([min(lmbdas), max(lmbdas)])
 plt.xlabel(r'$\lambda$',fontsize=16)
 plt.ylabel('MSE',fontsize=16)
-plt.savefig("MSE_J_N2000_train4_test6.png")
+plt.savefig("MSE_J_N5000_train4_test6.png")
 plt.show()
 
 
@@ -166,7 +167,7 @@ plt.xlim([min(lmbdas), max(lmbdas)])
 plt.xlabel(r'$\lambda$',fontsize=16)
 plt.ylabel('R2Score',fontsize=16)
 plt.tick_params(labelsize=16)
-plt.savefig("R2_score_N2000_train4_test6.png")
+plt.savefig("R2_score_N5000_train4_test6.png")
 plt.show()
 
 
